@@ -17,6 +17,8 @@ struct ContentView: View {
     @State private var alertMessage = ""
     @State private var showingAlert = false
     
+    @State private var calculatedBedtime = ""
+    
     static var defaultWakeTime: Date {
         var components = DateComponents()
         components.hour = 7
@@ -31,9 +33,11 @@ struct ContentView: View {
                 Section("When do you want to wake up?") {
                     DatePicker("Please enter time", selection: $wakeUp, displayedComponents: .hourAndMinute)
                         .labelsHidden()
+                        .onChange(of: wakeUp, calculateBedtime)
                 }
                 Section("Desired amount of sleep") {
                     Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
+                        .onChange(of: sleepAmount, calculateBedtime)
                 }
 
                 Section("Daily coffee intake") {
@@ -42,10 +46,11 @@ struct ContentView: View {
                             Text("\(number)")
                         }
                     }
+                    .onChange(of: coffeeAmount, calculateBedtime)
                 }
                 
                 Section("Your ideal bedtime is") {
-                    Text("x cups")
+                    Text("\(calculatedBedtime)")
                         .foregroundStyle(.blue)
                 }
             }
@@ -73,9 +78,7 @@ struct ContentView: View {
             let prediction = try model.prediction(wake: Double(hour + minute), estimatedSleep: sleepAmount, coffee: Double(coffeeAmount))
 
             let sleepTime = wakeUp - prediction.actualSleep
-            alertTitle = "Your ideal bedtime is…"
-            alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
-            showingAlert = true
+            calculatedBedtime = sleepTime.formatted(date: .omitted, time: .shortened)
             
         } catch {
             alertTitle = "Something wrong!"
